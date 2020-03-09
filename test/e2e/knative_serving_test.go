@@ -1,9 +1,11 @@
 package e2e
 
 import (
+	servingoperatorv1alpha1 "knative.dev/serving-operator/pkg/apis/serving/v1alpha1"
 	"strings"
 	"testing"
 
+	servingv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"github.com/openshift-knative/serverless-operator/test"
 	v1a1test "github.com/openshift-knative/serverless-operator/test/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -307,20 +309,22 @@ func waitForRouteServingText(t *testing.T, caCtx *test.Context, routeDomain, exp
 	}
 }
 
-func resetProxy(t *testing.T, caCtx *test.Context, proxyValue, envName string) {
+func updateProxy(t *testing.T, caCtx *test.Context, proxyValue, envName string) {
 	if err := test.UpdateGlobalProxy(caCtx, proxyValue); err != nil {
 		t.Fatal("Failed to update proxy", err)
 	}
 	t.Log("wait for controller to be ready after update")
-	test.WaitForControllerEnvironment(caCtx, knativeServing, envName)
+	if err := test.WaitForControllerEnvironment(caCtx, knativeServing, envName); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func testKnativeServingForGlobalProxy(t *testing.T, caCtx *test.Context) {
-	test.CleanupOnInterrupt(t, func() { resetProxy(t, caCtx, "", proxyVerificationEnvName) })
-	defer resetProxy(t, caCtx, "", proxyVerificationEnvName)
+	test.CleanupOnInterrupt(t, func() { updateProxy(t, caCtx, "", proxyVerificationEnvName) })
+	defer updateProxy(t, caCtx, "", proxyVerificationEnvName)
 
 	t.Log("update global proxy with empty proxy value")
-	resetProxy(t, caCtx, "", proxyVerificationEnvName)
+	updateProxy(t, caCtx, "", proxyVerificationEnvName)
 
 	t.Log("deploy successfully knative service after proxy update")
 	if _, err := test.WithServiceReady(caCtx, proxyHelloworldServiceSuccess, testNamespace, image); err != nil {
@@ -328,47 +332,45 @@ func testKnativeServingForGlobalProxy(t *testing.T, caCtx *test.Context) {
 	}
 
 	t.Log("update global proxy with proxy server")
-	resetProxy(t, caCtx, "http://1.2.4.5:8999", httpProxy)
+	updateProxy(t, caCtx, "http://1.2.4.5:8999", httpProxy)
 
 	t.Log("deploy knative service after proxy update")
-	test.WithServiceReady(caCtx, proxyHelloworldService, testNamespace, proxyImage)
-
-	svc, err := test.GetService(caCtx, proxyHelloworldService, testNamespace)
-	if err != nil {
-		t.Fatal(err)
+	if _, err := test.CreateService(caCtx, proxyHelloworldService, testNamespace, proxyImage); err != nil {
+		t.Fatal("Failed to create service", err)
 	}
-	var proxyExist bool
-
-	for _, cond := range svc.Status.Conditions {
-		// After global proxy update every call goes through proxy server
-		// Here it give unable to pull image because it tries to connect to not running http server
-		if strings.Contains(cond.Message, "dial tcp 1.2.4.5:8999: i/o timeout") {
-			// use bool variable here because service status have more than one conditions and if none of the condition matches
-			// then assume knative service failed because of some other reason
-			proxyExist = true
-			break
+	svcState, err := test.WaitForServiceState(caCtx, proxyHelloworldService, testNamespace, func(s *servingv1beta1.Service, err error) (bool, error) {
+		if err != nil {
+			return false, err
 		}
-	}
-
-	if !proxyExist {
-		t.Fatal("Service not ready", err)
+		for _, cond := range s.Status.Conditions {
+			// After global proxy update every call goes through proxy server
+			// Here it give unable to pull image because it tries to connect to not running http server
+			if strings.Contains(cond.Message, "dial tcp 1.2.4.5:8999: i/o timeout") {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
+	if err != nil {
+		t.Fatal("service state never appeared", svcState)
 	}
 
 	t.Log("update global proxy with empty value")
-	resetProxy(t, caCtx, "", proxyVerificationEnvName)
+	updateProxy(t, caCtx, "", proxyVerificationEnvName)
 
 	// Ref: https://bugzilla.redhat.com/show_bug.cgi?id=1751903#c11
 	// Currently when we update cluster proxy by removing httpProxy, noProxy etc... OLM will not update controller
-	// once bugzilla issue https://bugzilla.redhat.com/show_bug.cgi?id=1751903#c11 fixes need to add test cases
-	// in order to verify proxy update success and knative service deployed successfully
+	// once bugzilla issue https://bugzilla.redhat.com/show_bug.cgi?id=1751903#c11 fixes need to add test case related to
+	// verifying sucess of proxy update and successfully deploying knative service
 
 	// In order to make sure state of the knative serving same like before
-	if _, err = v1a1test.WaitForKnativeServingState(caCtx, knativeServing, knativeServing, v1a1test.IsKnativeServingReady); err != nil {
-		// Sometimes because of proxy unset cluster takes time to login so need to wait until pods are up again
-		if strings.Contains(err.Error(), "Unauthorized") {
-			test.WaitForControllerEnvironment(caCtx, knativeServing, proxyVerificationEnvName)
-		} else {
-			t.Fatal(err)
+	if _, err = v1a1test.WaitForKnativeServingState(caCtx, knativeServing, knativeServing, func(ks *servingoperatorv1alpha1.KnativeServing, err error) (bool, error) {
+		if apierrs.IsUnauthorized(err) {
+			// Retry unauthorized errors, they sometimes happen when resetting the proxy.
+			return false, nil
 		}
+		return v1a1test.IsKnativeServingReady(ks, err)
+	}); err != nil {
+		t.Fatal("knative serving is not in desired state", err)
 	}
 }

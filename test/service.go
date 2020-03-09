@@ -68,9 +68,12 @@ func CreateService(ctx *Context, name, namespace, image string) (*servingv1beta1
 
 func WaitForControllerEnvironment(ctx *Context, ns, envName string) error {
 	return wait.PollImmediate(Interval, 10*time.Minute, func() (bool, error) {
-		pods, _ := ctx.Clients.Kube.CoreV1().Pods(ns).List(metav1.ListOptions{
+		pods, err := ctx.Clients.Kube.CoreV1().Pods(ns).List(metav1.ListOptions{
 			LabelSelector: "app=controller",
 		})
+		if err != nil {
+			return false, err
+		}
 		for i := range pods.Items {
 			for _, container := range pods.Items[i].Spec.Containers {
 				for _, e := range container.Env {
