@@ -38,7 +38,7 @@ type extension struct {
 }
 
 func (e *extension) Manifests(ks v1alpha1.KComponent) ([]mf.Manifest, error) {
-	return monitoring.GetComponentMonitoringPlatformManifests(ks.GetSpec().GetConfig(), monitoring.Serving, ks.GetNamespace())
+	return GetMonitoringManifest(ks)
 }
 
 func (e *extension) Transformers(ks v1alpha1.KComponent) []mf.Transformer {
@@ -48,7 +48,7 @@ func (e *extension) Transformers(ks v1alpha1.KComponent) []mf.Transformer {
 			"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
 			"NO_PROXY":    os.Getenv("NO_PROXY"),
 		}),
-	}, monitoring.GetComponentTransformers(ks.GetSpec().GetConfig(), monitoring.Serving, ks.GetNamespace())...)
+	}, GetMonitoringTransformers(ks)...)
 }
 
 func (e *extension) Reconcile(ctx context.Context, comp v1alpha1.KComponent) error {
