@@ -8,5 +8,5 @@ import (
 )
 
 func main() {
-	sharedmain.Main("openshift-ingress-controller", ingress.NewController)
+	sharedmain.Main("openshift-ingress-controller", ingress.NewController, ingress.NewIstioController)
 }
