@@ -1,0 +1,23 @@
+apiVersion: operator.knative.dev/v1alpha1
+kind: KnativeServing
+metadata:
+  name: knative-serving
+  namespace: knative-serving
+spec:
+  high-availability:
+    replicas: 1
+  config:
+    network:
+      "ingress.class": "istio.ingress.networking.knative.dev"
+  ingress:
+    istio:
+      enabled: true
+  deployments:
+  - name: activator
+    annotations:
+      "sidecar.istio.io/inject": "true"
+      "sidecar.istio.io/rewriteAppHTTPProbers": "true"
+  - name: autoscaler
+    annotations:
+      "sidecar.istio.io/inject": "true"
+      "sidecar.istio.io/rewriteAppHTTPProbers": "true"
