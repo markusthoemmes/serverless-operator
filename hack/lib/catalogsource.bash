@@ -28,17 +28,6 @@ function install_catalogsource {
   mkdir -p "${rootdir}/_output"
   cp "$csv" "${rootdir}/_output/bkp.yaml"
 
-  if [ -n "$OPENSHIFT_CI" ]; then
-    # Image variables supplied by ci-operator.
-    sed -i "s,image: .*openshift-serverless-.*:knative-operator,image: ${KNATIVE_OPERATOR}," "$csv"
-    sed -i "s,image: .*openshift-serverless-.*:knative-openshift-ingress,image: ${KNATIVE_OPENSHIFT_INGRESS}," "$csv"
-    sed -i "s,image: .*openshift-serverless-.*:openshift-knative-operator,image: ${OPENSHIFT_KNATIVE_OPERATOR}," "$csv"
-  elif [ -n "$DOCKER_REPO_OVERRIDE" ]; then
-    sed -i "s,image: .*openshift-serverless-.*:knative-operator,image: ${DOCKER_REPO_OVERRIDE}/knative-operator," "$csv"
-    sed -i "s,image: .*openshift-serverless-.*:knative-openshift-ingress,image: ${DOCKER_REPO_OVERRIDE}/knative-openshift-ingress," "$csv"
-    sed -i "s,image: .*openshift-serverless-.*:openshift-knative-operator,image: ${DOCKER_REPO_OVERRIDE}/openshift-knative-operator," "$csv"
-  fi
-
   if [ -n "$OPENSHIFT_CI" ] || [ -n "$DOCKER_REPO_OVERRIDE" ]; then
     logger.info 'Listing CSV content'
     cat "$csv"
@@ -119,7 +108,7 @@ spec:
         - -c
         - |-
           podman login -u $pull_user -p $token image-registry.openshift-image-registry.svc:5000 && \
-          /bin/opm registry add -d index.db --container-tool=podman --mode=replaces -b quay.io/openshift-knative/serverless-bundle:1.7.2,quay.io/openshift-knative/serverless-bundle:1.8.0,quay.io/openshift-knative/serverless-bundle:1.9.0,quay.io/openshift-knative/serverless-bundle:1.10.0,quay.io/openshift-knative/serverless-bundle:1.10.1,quay.io/openshift-knative/serverless-bundle:1.11.0,registry.ci.openshift.org/openshift/openshift-serverless-v1.12.0:serverless-bundle,registry.ci.openshift.org/openshift/openshift-serverless-v1.13.0:serverless-bundle,registry.ci.openshift.org/openshift/openshift-serverless-v1.14.0:serverless-bundle,image-registry.openshift-image-registry.svc:5000/$OLM_NAMESPACE/serverless-bundle && \
+          /bin/opm registry add -d index.db --container-tool=podman --mode=replaces -b image-registry.openshift-image-registry.svc:5000/$OLM_NAMESPACE/serverless-bundle && \
           /bin/opm registry serve -d index.db -p 50051
 ---
 apiVersion: v1

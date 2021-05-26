@@ -2,21 +2,10 @@
 
 ## Install ServiceMesh and Serverless operators
 
-This installs Serverless from our code right now, but will be via OperatorHub once we release Serverless 1.15.
-
-To run this, the requirements from [README](../README) apply, so you'll have to have the following prereqs.
-
-- `podman` aliased to `docker` or `docker` (17.05 or newer)
-- `bash` (4.0.0 or newer)
-- `make`
-- `yq` (3.4.0)
-
-Also note the `DOCKER_REPO_OVERRIDE` variable, which will have to be set to the registry that should be used for the images to be built on. Examples can be `docker.io/$username` or `quay.io/$username`.
-It is assumed that either `podman` or `docker` (whichever you use) are setup to be able to push to those registries.
+This installs Serverless from images pushed for this branch right now. Serverless 1.15 will support this in an actual release. If you need to mirror the images, all image references in [the CSV](../olm-catalog/serverless-operator/manifests/serverless-operator.clusterserviceversion.yaml) will have to be mirrored accordingly, prior to installation. In the same way, `quay.io/openshift-knative/serverless-index:v1.14.3` will have to be available (it's part of [`catalogsource.bash`](../hack/lib/catalogsource.bash))
 
 ```
-export DOCKER_REPO_OVERRIDE=my.registry.com/path
-make images install-mesh install-operator
+make install-mesh install-operator
 ```
 
 ## Create a wildcard certificate to use for the respective domain

@@ -377,7 +377,7 @@ spec:
                       - name: "IMAGE_KN_CLI_ARTIFACTS"
                         value: "registry.ci.openshift.org/openshift/knative-v0.21.0:kn-cli-artifacts"
                     # This reference will be replaced in local builds and CI via hack/lib/catalogsource.bash.
-                    image: registry.ci.openshift.org/openshift/openshift-serverless-nightly:openshift-knative-operator
+                    image: docker.io/markusthoemmes/openshift-knative-operator:mtls
                     imagePullPolicy: IfNotPresent
                     name: knative-operator
                     ports:
@@ -400,7 +400,7 @@ spec:
                 containers:
                   - name: knative-openshift
                     # This reference will be replaced in local builds and CI via hack/lib/catalogsource.bash.
-                    image: registry.ci.openshift.org/openshift/openshift-serverless-nightly:knative-operator
+                    image: docker.io/markusthoemmes/knative-operator:mtls
                     imagePullPolicy: Always
                     readinessProbe:
                       httpGet:
@@ -540,7 +540,7 @@ spec:
                 containers:
                   - name: knative-openshift-ingress
                     # This reference will be replaced in local builds and CI via hack/lib/catalogsource.bash.
-                    image: registry.ci.openshift.org/openshift/openshift-serverless-nightly:knative-openshift-ingress
+                    image: docker.io/markusthoemmes/knative-openshift-ingress:mtls
                     imagePullPolicy: Always
                     env:
                       - name: WATCH_NAMESPACE
@@ -735,13 +735,13 @@ spec:
   relatedImages:
     - name: knative-operator
       # This reference will be replaced in local builds and CI via hack/lib/catalogsource.bash.
-      image: registry.ci.openshift.org/openshift/openshift-serverless-nightly:openshift-knative-operator
+      image: docker.io/markusthoemmes/openshift-knative-operator:mtls
     - name: knative-openshift
       # This reference will be replaced in local builds and CI via hack/lib/catalogsource.bash.
-      image: registry.ci.openshift.org/openshift/openshift-serverless-nightly:knative-operator
+      image: docker.io/markusthoemmes/knative-operator:mtls
     - name: knative-openshift-ingress
       # This reference will be replaced in local builds and CI via hack/lib/catalogsource.bash.
-      image: registry.ci.openshift.org/openshift/openshift-serverless-nightly:knative-openshift-ingress
+      image: docker.io/markusthoemmes/knative-openshift-ingress:mtls
     - name: "IMAGE_queue-proxy"
       image: "registry.ci.openshift.org/openshift/knative-v0.21.0:knative-serving-queue"
     - name: "IMAGE_activator"
@@ -820,5 +820,4 @@ spec:
       image: "registry.ci.openshift.org/openshift/knative-v0.21.1:knative-eventing-kafka-consolidated-dispatcher"
     - name: "KAFKA_IMAGE_kafka-webhook__kafka-webhook"
       image: "registry.ci.openshift.org/openshift/knative-v0.21.1:knative-eventing-kafka-webhook"
-  replaces: serverless-operator.v1.14.0
   version: 1.15.0
