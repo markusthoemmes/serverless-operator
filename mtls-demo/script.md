@@ -75,9 +75,9 @@ spec:
 EOF
 ```
 
-### Replace istiod image (to workaround OSSM-449)
+### [If ServiceMesh < 2.0.5] Replace istiod image (to workaround OSSM-449)
 
-This will no longer be necessary with an upcoming ServiceMesh release.
+This will no longer be necessary with an ServiceMesh 2.0.5 and after.
 
 ```
 oc -n istio-system set image deploy/istiod-basic discovery=docker.io/markusthoemmes/pilot-ubi8:2.0.2-fix
