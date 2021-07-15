@@ -192,6 +192,7 @@ spec:
                 - ''
               resources:
                 - configmaps
+                - events
                 - namespaces
                 - secrets
                 - serviceaccounts
@@ -202,6 +203,7 @@ spec:
                 - apps
               resources:
                 - deployments
+                - deployments/finalizers # For monitoring resources to set their ownerRef correctly
               verbs:
                 - '*'
             - apiGroups:
